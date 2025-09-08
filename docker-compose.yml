@@ -25,8 +25,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"  # Management UI
+      - "61613:61613"  # STOMP
+      - "15674:15674"  # Web-STOMP (websocket)
     volumes:
       - ./volumes/rabbitmq:/var/lib/rabbitmq
+    command: >
+      sh -c "rabbitmq-plugins enable --offline rabbitmq_stomp rabbitmq_web_stomp && rabbitmq-server"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0

@@ -16,7 +16,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -40,9 +39,9 @@ public class SecurityUtil {
 
     public String createAccessToken(String email, ResponseLoginDTO resLoginDTO) {
         ResponseLoginDTO.UserInsideToken userInsideToken = new ResponseLoginDTO.UserInsideToken();
-        userInsideToken.setEmail(resLoginDTO.getUser().getEmail());
+        userInsideToken.setUsername(resLoginDTO.getUser().getUsername());
         userInsideToken.setId(resLoginDTO.getUser().getId());
-        userInsideToken.setName(resLoginDTO.getUser().getName());
+        userInsideToken.setFullName(resLoginDTO.getUser().getFullName());
         userInsideToken.setRole(resLoginDTO.getUser().getRole());
 
         Instant nowTime = Instant.now();
@@ -78,8 +77,8 @@ public class SecurityUtil {
 
         ResponseLoginDTO.UserInsideToken userToken = new ResponseLoginDTO.UserInsideToken();
         userToken.setId(dto.getUser().getId());
-        userToken.setEmail(dto.getUser().getEmail());
-        userToken.setName(dto.getUser().getName());
+        userToken.setUsername(dto.getUser().getUsername());
+        userToken.setFullName(dto.getUser().getFullName());
 
         // @formatter:off
         JwtClaimsSet claims = JwtClaimsSet.builder()

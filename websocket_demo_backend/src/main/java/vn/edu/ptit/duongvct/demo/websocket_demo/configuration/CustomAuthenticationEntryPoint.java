@@ -9,7 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
-import vn.edu.ptit.duongvct.demo.websocket_demo.dto.response.RestResponse;
+import vn.edu.ptit.duongvct.demo.websocket_demo.dto.response.ApiResponse;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -29,7 +29,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         this.delegate.commence(request, response, authException);
         response.setContentType("application/json;charset=UTF-8");
 
-        RestResponse<Object> res = new RestResponse<Object>();
+        ApiResponse<Object> res = new ApiResponse<Object>();
         res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
 
         String errorMessage = Optional.ofNullable(authException.getCause()) // NULL

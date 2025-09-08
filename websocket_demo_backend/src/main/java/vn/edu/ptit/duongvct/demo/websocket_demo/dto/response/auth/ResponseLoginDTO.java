@@ -20,8 +20,8 @@ public class ResponseLoginDTO {
     @NoArgsConstructor
     public static class UserLogin {
         private Long id;
-        private String email;
-        private String name;
+        private String username;
+        private String fullName;
         private String role;
     }
 
@@ -37,8 +37,8 @@ public class ResponseLoginDTO {
     @Setter
     public static class UserInsideToken {
         private Long id;
-        private String email;
-        private String name;
+        private String username;
+        private String fullName;
         private String role;
 
     }
