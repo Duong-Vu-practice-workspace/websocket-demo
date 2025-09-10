@@ -28,7 +28,7 @@ spring:
       group-id: websocket-group
 
 cors:
-  allow-origins: http://localhost:9000,http://localhost:3000
+  allow-origins: http://localhost:9000,http://localhost:3000,http://localhost:5183,http://localhost:5184
 
 jwt:
   base64-secret: GGo23jmp41+oCPrOYJpLDmyfHwq0zmYn0dkgYTrprbaeKJlvne3up7KCTkckzB5BdnbvdBVTJopXVyB8bZiLsQ==

@@ -10,10 +10,7 @@ import vn.edu.ptit.duongvct.demo.websocket_demo.repository.ActionLogRepository;
 import vn.edu.ptit.duongvct.demo.websocket_demo.repository.BackupRepository;
 import vn.edu.ptit.duongvct.demo.websocket_demo.service.BackupStatusNotifierService;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -22,6 +19,7 @@ public class KafkaListenerService {
     private final BackupRepository backupRepository;
     private final ActionLogRepository actionLogRepository;
     private final BackupStatusNotifierService notifier;
+
     @Value("${kafka.backup-topic}")
     private String topicBackupCommand;
 
@@ -48,8 +46,10 @@ public class KafkaListenerService {
             Backup backup = backupOptional.get();
             backup.setStatus("COMPLETED");
             Backup saved = backupRepository.save(backup);
-            //TODO send via websocket
-            notifier.notifyBackupUpdated(saved);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("id", saved.getId());
+            payload.put("status", saved.getStatus());
+            notifier.publishBackupStatus(payload);
             log.info("Backup {} updated -> notified frontend", saved.getId());
         }
 

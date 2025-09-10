@@ -57,6 +57,11 @@ const AppHeader = () => {
             key: "home",
             icon: <HomeOutlined />,
         },
+        {
+            label: <Link to={"/backup"}>Backup</Link>,
+            key: "backup",
+            icon: <ExclamationOutlined />,
+        },
         ...(!user?.id ? [
             {
                 label: <Link to={"/login"}>Login</Link>,

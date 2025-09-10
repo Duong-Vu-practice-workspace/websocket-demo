@@ -1,6 +1,8 @@
 // ...existing code...
 package vn.edu.ptit.duongvct.demo.websocket_demo.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,15 +14,32 @@ import vn.edu.ptit.duongvct.demo.websocket_demo.domain.Backup;
 @Slf4j
 public class BackupStatusNotifierService {
     private final SimpMessagingTemplate messagingTemplate;
-
-    public void notifyBackupUpdated(Backup backup) {
-        if (backup == null || backup.getId() == null) return;
-        String destination = "/topic/backup/" + backup.getId();
+    private final ObjectMapper objectMapper;
+//    public void notifyBackupUpdated(Backup backup) {
+//        if (backup == null || backup.getId() == null) return;
+//        String destination = "/topic/backup/" + backup.getId();
+//        try {
+//            messagingTemplate.convertAndSend(destination, backup);
+//            log.info("Sent websocket update to {} for backup id={}", destination, backup.getId());
+//        } catch (Exception e) {
+//            log.warn("Failed to send websocket update for backup {}: {}", backup.getId(), e.getMessage());
+//        }
+//    }
+    public void publishBackupStatus(Object payload) {
         try {
-            messagingTemplate.convertAndSend(destination, backup);
-            log.info("Sent websocket update to {} for backup id={}", destination, backup.getId());
-        } catch (Exception e) {
-            log.warn("Failed to send websocket update for backup {}: {}", backup.getId(), e.getMessage());
+            String json = objectMapper.writeValueAsString(payload);
+            messagingTemplate.convertAndSend("/topic/backup-status", json);
+            messagingTemplate.convertAndSend("/queue/duongvct_queue_executor", json);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize payload: {}", e.getMessage());
+            messagingTemplate.convertAndSend("/topic/backup-status", payload);
+            messagingTemplate.convertAndSend("/queue/duongvct_queue_executor", payload);
         }
     }
+
+    public void publishBackupStatusToUser(String username, Object payload) {
+        messagingTemplate.convertAndSendToUser(username, "/queue/backup-status", payload);
+
+    }
+
 }

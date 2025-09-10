@@ -38,14 +38,21 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     private final PrincipleHandshakeHandler principleHandshakeHandler;
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        var origins = allowOriginConfig.split(",");
+//        var origins = allowOriginConfig.split(",");
+//        registry.addEndpoint("/ws")
+//                .setAllowedOrigins(origins)
+//                .setHandshakeHandler(principleHandshakeHandler());
+//        registry.addEndpoint("/ws")
+//                .setAllowedOrigins(origins)
+//                .setHandshakeHandler(principleHandshakeHandler())
+//                .withSockJS(); // keep SockJS for browser clients; remove if not needed
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(origins)
+                .setAllowedOriginPatterns("*")
                 .setHandshakeHandler(principleHandshakeHandler());
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(origins)
+                .setAllowedOriginPatterns("*")
                 .setHandshakeHandler(principleHandshakeHandler())
-                .withSockJS(); // keep SockJS for browser clients; remove if not needed
+                .withSockJS();
     }
 
     @Override
@@ -64,7 +71,6 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
                 .setClientPasscode(rabbitPass)
                 .setSystemLogin(rabbitUser)
                 .setSystemPasscode(rabbitPass)
-                // heartbeat values (ms) — adjust if needed
                 .setSystemHeartbeatSendInterval(10000)
                 .setSystemHeartbeatReceiveInterval(10000);
     }

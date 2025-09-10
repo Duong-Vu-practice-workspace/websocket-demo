@@ -2,10 +2,7 @@ package vn.edu.ptit.duongvct.demo.websocket_demo.controller;
 
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import vn.edu.ptit.duongvct.demo.websocket_demo.domain.ActionLog;
 import vn.edu.ptit.duongvct.demo.websocket_demo.domain.Backup;
 import vn.edu.ptit.duongvct.demo.websocket_demo.repository.ActionLogRepository;
@@ -33,7 +30,7 @@ public class BackupController {
     @PostMapping
     public String createBackup(@RequestBody Backup backup) {
         backup.setStatus("CREATING");
-        backupRepository.save(backup);
+        Backup saved = backupRepository.save(backup);
         ActionLog actionLog = new ActionLog();
         actionLog.setAction("Create");
         actionLog.setEntityType("Backup");
@@ -42,6 +39,11 @@ public class BackupController {
         actionLog.setStatus("CREATING");
         actionLogRepository.save(actionLog);
         producerService.sendMessage(topicBackupCommand, actionLog.getAction() + " " + actionLog.getEntityType() + " " + backup.getId());
-        return "success";
+        return String.valueOf(saved.getId());
+    }
+
+    @GetMapping("/{id}")
+    public Backup getBackupById(@PathVariable Long id) {
+        return backupRepository.findById(id).orElse(null);
     }
 }

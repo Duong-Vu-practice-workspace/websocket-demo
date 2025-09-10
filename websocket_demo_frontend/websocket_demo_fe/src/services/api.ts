@@ -22,3 +22,10 @@ export const logoutAPI = () => {
     const urlBackend = "/api/v1/auth/logout";
     return axios.post<IBackendRes<IRegister>>(urlBackend);
 }
+export const createBackupAPI = (name: string) => {
+    return axios.post<string>('/api/v1/backup', { name });
+}
+
+export const fetchBackupByIdAPI = (id: number | string) => {
+    return axios.get(`/api/v1/backup/${id}`);
+}

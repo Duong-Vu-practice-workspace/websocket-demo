@@ -13,9 +13,9 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowedOrigins(
-//                Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173"));
-        configuration.addAllowedOriginPattern("*");
+        configuration.setAllowedOrigins(
+                Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173", "http://localhost:5174"));
+//        configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed methods
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry"));
         configuration.setAllowCredentials(true); // cấu hình cho phép cookie

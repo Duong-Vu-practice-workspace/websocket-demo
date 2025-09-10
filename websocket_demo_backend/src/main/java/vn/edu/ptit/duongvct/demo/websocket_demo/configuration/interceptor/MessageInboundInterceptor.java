@@ -17,6 +17,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -60,11 +63,20 @@ public class MessageInboundInterceptor implements ChannelInterceptor {
 
             try {
                 Jwt jwt = jwtDecoder.decode(token);
-                Authentication auth = new JwtAuthenticationToken(jwt);
+                Authentication auth = new JwtAuthenticationToken(jwt, Collections.emptyList());
+
+                // set security context and persist principal on the accessor and session attributes
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 accessor.setUser(auth);
+
+                Map<String, Object> sessionAttrs = accessor.getSessionAttributes();
+                if (sessionAttrs != null) {
+                    sessionAttrs.put("principal", auth);
+                    // some clients/frameworks expect "simpUser"
+                    sessionAttrs.put("simpUser", auth);
+                }
+
                 log.info("set User : {}", auth);
-                // return rebuilt message with the accessor containing the user
                 return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
             } catch (JwtException ex) {
                 log.warn("WebSocket CONNECT rejected: invalid JWT: {}", ex.getMessage());
@@ -72,12 +84,42 @@ public class MessageInboundInterceptor implements ChannelInterceptor {
             }
         }
 
-        // Reject client frames that arrive without an authenticated Principal
+        // For SUBSCRIBE and SEND ensure an authenticated principal is available.
         if (StompCommand.SUBSCRIBE.equals(command) || StompCommand.SEND.equals(command)) {
-            if (accessor.getUser() == null) {
+            Authentication frameAuth = null;
+
+            if (accessor.getUser() instanceof Authentication) {
+                frameAuth = (Authentication) accessor.getUser();
+            } else {
+                Map<String, Object> sessionAttrs = accessor.getSessionAttributes();
+                if (sessionAttrs != null) {
+                    Object attr = sessionAttrs.get("principal");
+                    if (attr instanceof Authentication) {
+                        frameAuth = (Authentication) attr;
+                    } else {
+                        Object simpUser = sessionAttrs.get("simpUser");
+                        if (simpUser instanceof Authentication) {
+                            frameAuth = (Authentication) simpUser;
+                        }
+                    }
+                }
+            }
+
+            if (frameAuth == null) {
+                Authentication scAuth = SecurityContextHolder.getContext().getAuthentication();
+                if (scAuth instanceof Authentication) {
+                    frameAuth = scAuth;
+                }
+            }
+
+            if (frameAuth == null || !frameAuth.isAuthenticated()) {
                 log.warn("WebSocket {} rejected: no authenticated Principal", command);
                 return null;
             }
+
+            // ensure accessor has the user for downstream handlers
+            accessor.setUser(frameAuth);
+            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
         }
 
         if (StompCommand.DISCONNECT.equals(command)) {
