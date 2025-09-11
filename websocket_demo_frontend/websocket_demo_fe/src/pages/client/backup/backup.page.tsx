@@ -1,37 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Card, Input, Button, Spin, List, Typography, notification, Space } from 'antd';
+import { Card, Input, Button, List, Typography, notification, Space } from 'antd';
 import { addWSListener } from '../../../services/websocket';
-import { createBackupAPI, fetchBackupByIdAPI } from "../../../services/api.ts";
+import { createBackupAPI } from "../../../services/api.ts";
 
-interface BackupItem {
+
+interface PayLoadBackup {
     id: string;
-    name: string;
     status: string;
 }
-
 const BackupPage = () => {
     const [name, setName] = useState<string>('');
     const [creating, setCreating] = useState<boolean>(false);
     const [backups, setBackups] = useState<BackupItem[]>([]);
 
     useEffect(() => {
-        const unsub = addWSListener(async (payload: any) => {
+        const unsub = addWSListener(async (payload: PayLoadBackup) => {
             console.log('BackupPage received WS payload:', payload);
-            let incomingId: string | undefined;
-            let incomingStatus: string | undefined;
             if (payload == null) {
                 console.warn('BackupPage: null payload received');
                 return;
             }
-            if (typeof payload === 'string' || typeof payload === 'number') {
-                incomingId = String(payload);
-            } else if (payload.id) {
-                incomingId = String(payload.id);
-                incomingStatus = payload.status;
-            } else {
-                console.warn('BackupPage: unknown payload format:', payload);
-                return;
-            }
+            const incomingId: string | undefined = payload.id;
+            const incomingStatus: string | undefined = payload.status;
 
             if (!incomingId) return;
 
@@ -63,9 +53,10 @@ const BackupPage = () => {
         setCreating(true);
         try {
             const res = await createBackupAPI(name.trim());
-            const id = res && (res.data ?? res) ? String(res.data ?? res) : null;
+            const id = res.data.id;
+            // const id = res && (res.data ?? res) ? String(res.data ?? res) : null;
             if (id) {
-                const newBackup: BackupItem = { id, name: name.trim(), status: 'CREATING' };
+                const newBackup: BackupItem = { id, name: res.data.name.trim(), status: res.data.status };
                 setBackups(prev => [newBackup, ...prev]);  // Add to the top of the list
                 setName('');  // Clear input
                 notification.info({ message: 'Backup started', description: `Backup id ${id}` });
@@ -73,7 +64,7 @@ const BackupPage = () => {
                 throw new Error('Invalid response');
             }
         } catch (e) {
-            notification.error({ message: 'Create backup failed' });
+            notification.error({ message: 'Create backup failed'});
         } finally {
             setCreating(false);
         }

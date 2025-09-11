@@ -24,6 +24,7 @@ const LoginPage = () => {
         setIsSubmit(false);
         if (res?.data) {
             localStorage.setItem('access_token', res.data.access_token);
+            localStorage.setItem('username', res.data.user.username);  // Assuming response has username
             message.success("Login successfully!");
             setIsAuthenticated(true);
             setUser(res.data.user);

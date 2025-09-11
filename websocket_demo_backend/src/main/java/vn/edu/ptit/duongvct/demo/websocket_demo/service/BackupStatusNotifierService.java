@@ -40,11 +40,11 @@ public class BackupStatusNotifierService {
     public void publishBackupStatusToUser(String username, Object payload) {
         try {
             String json = objectMapper.writeValueAsString(payload);
-            log.info("Sending WS message to /user/{}/queue/backup-status: {}", username, json);  // Add this
-            messagingTemplate.convertAndSendToUser(username, "/queue/backup-status", json);
+            log.info("Sending WS message to /queue/user-{}: {}", username, json);
+            messagingTemplate.convertAndSend("/queue/user-" + username, json);
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize payload for user {}: {}", username, e.getMessage());
-            messagingTemplate.convertAndSendToUser(username, "/queue/backup-status", payload);
+            messagingTemplate.convertAndSend("/queue/user-" + username, payload);
         }
     }
 

@@ -8,6 +8,7 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -63,7 +64,8 @@ public class MessageInboundInterceptor implements ChannelInterceptor {
 
             try {
                 Jwt jwt = jwtDecoder.decode(token);
-                Authentication auth = new JwtAuthenticationToken(jwt, Collections.emptyList());
+                String username = jwt.getSubject();  // Extract username string
+                Authentication auth = new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());  // Set username as principal
 
                 // set security context and persist principal on the accessor and session attributes
                 SecurityContextHolder.getContext().setAuthentication(auth);

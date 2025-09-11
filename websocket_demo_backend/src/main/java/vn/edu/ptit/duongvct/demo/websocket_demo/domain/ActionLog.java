@@ -24,7 +24,9 @@ public class ActionLog {
     private String action;
     private String entityType;
     private String status;
+    private String entityId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime deleteTime;
 
 }

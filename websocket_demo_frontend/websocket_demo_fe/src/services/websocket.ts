@@ -6,9 +6,18 @@ let listeners: Array<(payload: any) => void> = [];
 
 export function connectWS(accessToken: string, onMessage: (payload: any) => void) {
     if (client && client.active) return client;
-
+    const sockjs = new SockJS(`${import.meta.env.VITE_BACKEND_URL}/ws`, null, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`
+        }
+    });
+    const username = localStorage.getItem('username');
+    if (!username) {
+        console.error('WS: Username not found in localStorage');
+        return null;
+    }
     client = new Client({
-        webSocketFactory: () => new SockJS(`${import.meta.env.VITE_BACKEND_URL}/ws`),
+        webSocketFactory: () => sockjs,
         connectHeaders: {
             Authorization: accessToken ? `Bearer ${accessToken}` : ''
         },
@@ -30,11 +39,19 @@ export function connectWS(accessToken: string, onMessage: (payload: any) => void
             console.log('WS: Subscribing to /user/queue/backup-status');
             // subscribe to user-specific queue (backend must send to /user/{username}/queue/backup-status)
             client!.subscribe('/user/queue/backup-status', (msg) => {
+                console.log("Received user message:", msg.body);
                 const body = msg.body ? JSON.parse(msg.body) : null;
                 console.log('WS: Received on /user/queue/backup-status:', msg.body);
                 try { onMessage(body); } catch (e) { /* ignore */ }
                 listeners.forEach(cb => {
                     try { cb(body); } catch (e) { /* ignore */ }
+                });
+            });
+            client!.subscribe('/queue/user-' + username, (message) => {
+                console.log("WS: Received user-specific message:", message.body);
+                try { onMessage(JSON.parse(message.body)); } catch (e) { /* ignore */ }
+                listeners.forEach(cb => {
+                    try { cb(JSON.parse(message.body)); } catch (e) { /* ignore */ }
                 });
             });
         },

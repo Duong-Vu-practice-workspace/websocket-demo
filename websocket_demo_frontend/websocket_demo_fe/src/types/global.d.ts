@@ -50,4 +50,9 @@ declare global {
         pages: number,
         total: number
     }
+    interface BackupItem {
+        id: string;
+        name: string;
+        status: string;
+    }
 }
