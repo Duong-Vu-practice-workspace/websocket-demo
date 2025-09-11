@@ -49,7 +49,14 @@ public class KafkaListenerService {
             Map<String, Object> payload = new HashMap<>();
             payload.put("id", saved.getId());
             payload.put("status", saved.getStatus());
-            notifier.publishBackupStatus(payload);
+            String username = saved.getUser() != null ? saved.getUser().getUsername() : null;
+            if (username != null) {
+                notifier.publishBackupStatusToUser(username, payload);
+                log.info("Backup {} updated -> notified user {}", saved.getId(), username);
+            } else {
+                notifier.publishBackupStatus(payload);
+                log.warn("Backup {} has no associated user, broadcasting", saved.getId());
+            }
             log.info("Backup {} updated -> notified frontend", saved.getId());
         }
 

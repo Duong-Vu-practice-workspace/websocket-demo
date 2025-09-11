@@ -38,8 +38,14 @@ public class BackupStatusNotifierService {
     }
 
     public void publishBackupStatusToUser(String username, Object payload) {
-        messagingTemplate.convertAndSendToUser(username, "/queue/backup-status", payload);
-
+        try {
+            String json = objectMapper.writeValueAsString(payload);
+            log.info("Sending WS message to /user/{}/queue/backup-status: {}", username, json);  // Add this
+            messagingTemplate.convertAndSendToUser(username, "/queue/backup-status", json);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize payload for user {}: {}", username, e.getMessage());
+            messagingTemplate.convertAndSendToUser(username, "/queue/backup-status", payload);
+        }
     }
 
 }

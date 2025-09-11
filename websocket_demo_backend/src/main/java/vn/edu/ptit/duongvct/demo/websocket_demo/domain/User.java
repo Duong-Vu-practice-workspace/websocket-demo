@@ -2,6 +2,9 @@ package vn.edu.ptit.duongvct.demo.websocket_demo.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.minidev.json.annotate.JsonIgnore;
+
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -20,4 +23,7 @@ public class User {
     private String role;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<Backup> backups;
 }

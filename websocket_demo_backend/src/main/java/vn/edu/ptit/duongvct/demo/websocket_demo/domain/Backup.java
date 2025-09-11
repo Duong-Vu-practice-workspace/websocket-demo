@@ -1,11 +1,9 @@
 package vn.edu.ptit.duongvct.demo.websocket_demo.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.minidev.json.annotate.JsonIgnore;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -23,4 +21,7 @@ public class Backup {
     private String name;
     private String status;
     private LocalDateTime deleteTime;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

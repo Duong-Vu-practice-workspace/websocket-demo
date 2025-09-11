@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Card, Input, Button, Spin, List, Typography, notification } from 'antd';
+import { Card, Input, Button, Spin, List, Typography, notification, Space } from 'antd';
 import { addWSListener } from '../../../services/websocket';
-import {createBackupAPI, fetchBackupByIdAPI} from "../../../services/api.ts";
+import { createBackupAPI, fetchBackupByIdAPI } from "../../../services/api.ts";
 
-
+interface BackupItem {
+    id: string;
+    name: string;
+    status: string;
+}
 
 const BackupPage = () => {
     const [name, setName] = useState<string>('');
     const [creating, setCreating] = useState<boolean>(false);
-    const [backupId, setBackupId] = useState<string | null>(null);
-    const [status, setStatus] = useState<string | null>(null);
-    const [history, setHistory] = useState<string[]>([]);
+    const [backups, setBackups] = useState<BackupItem[]>([]);
 
     useEffect(() => {
         const unsub = addWSListener(async (payload: any) => {
-            console.log('BackupPage received WS payload:', payload);  // Add this for debugging
+            console.log('BackupPage received WS payload:', payload);
             let incomingId: string | undefined;
             let incomingStatus: string | undefined;
             if (payload == null) {
@@ -23,11 +25,9 @@ const BackupPage = () => {
             }
             if (typeof payload === 'string' || typeof payload === 'number') {
                 incomingId = String(payload);
-                console.log('BackupPage: treating payload as plain id:', incomingId);
             } else if (payload.id) {
                 incomingId = String(payload.id);
                 incomingStatus = payload.status;
-                console.log('BackupPage: parsed JSON payload - id:', incomingId, 'status:', incomingStatus);
             } else {
                 console.warn('BackupPage: unknown payload format:', payload);
                 return;
@@ -35,91 +35,92 @@ const BackupPage = () => {
 
             if (!incomingId) return;
 
-            if (backupId && incomingId === backupId) {
-                console.log('BackupPage: matching backupId, updating status');
-                try {
-                    const res = await fetchBackupByIdAPI(incomingId);
-                    if (res && res.data) {
-                        const b = res.data as any;
-                        setStatus(b.status ?? incomingStatus ?? 'UNKNOWN');
-                    } else if (incomingStatus) {
-                        setStatus(incomingStatus);
-                    }
-                    setCreating(false);  // Stop spinner
-                    notification.success({
-                        message: `Backup ${incomingId} updated`,
-                        description: `Status: ${incomingStatus ?? 'updated'}`,
-                    });
-                    setHistory(prev => [`updated ${incomingId}: ${incomingStatus ?? 'updated'}`, ...prev]);
-                } catch (err) {
-                    console.warn('BackupPage: Failed to fetch backup:', err);
-                    setCreating(false);  // Stop spinner on error
-                }
-            } else {
-                console.log('BackupPage: incomingId does not match backupId:', incomingId, 'vs', backupId);
-            }
+            // Find and update the matching backup in the list
+            setBackups(prevBackups =>
+                prevBackups.map(backup =>
+                    backup.id === incomingId
+                        ? { ...backup, status: incomingStatus ?? backup.status }
+                        : backup
+                )
+            );
+
+            notification.success({
+                message: `Backup ${incomingId} updated`,
+                description: `Status: ${incomingStatus ?? 'updated'}`,
+            });
         });
 
         return () => {
             unsub();
         };
-    }, [backupId]);
+    }, []);
 
     const handleCreate = async () => {
-        if (!name) {
-            notification.warning({ message: 'Please provide a name' });
+        if (!name.trim()) {
+            notification.warning({ message: 'Please provide a backup name' });
             return;
         }
         setCreating(true);
         try {
-            const res = await createBackupAPI(name);
-            // controller returns saved id as plain string in body
-            const id = res && (res.data ?? res) ? (res.data ?? res) : null;
-            const idStr = String(id);
-            setBackupId(idStr);
-            setStatus('CREATING');
-            setHistory(prev => [`created ${idStr}`, ...prev]);
-            notification.info({ message: 'Backup started', description: `Backup id ${idStr}` });
-            // keep spinner until websocket event arrives
+            const res = await createBackupAPI(name.trim());
+            const id = res && (res.data ?? res) ? String(res.data ?? res) : null;
+            if (id) {
+                const newBackup: BackupItem = { id, name: name.trim(), status: 'CREATING' };
+                setBackups(prev => [newBackup, ...prev]);  // Add to the top of the list
+                setName('');  // Clear input
+                notification.info({ message: 'Backup started', description: `Backup id ${id}` });
+            } else {
+                throw new Error('Invalid response');
+            }
         } catch (e) {
-            setCreating(false);
             notification.error({ message: 'Create backup failed' });
+        } finally {
+            setCreating(false);
         }
+    };
+
+    const handleClearHistory = () => {
+        setBackups([]);
+        notification.info({ message: 'Backup history cleared' });
     };
 
     return (
         <div style={{ padding: 20 }}>
             <Card title="Create Backup" style={{ marginBottom: 20 }}>
-                <Input
-                    placeholder="Backup name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    style={{ marginBottom: 12 }}
-                />
-                <Button type="primary" onClick={handleCreate} loading={creating}>
-                    Create
-                </Button>
-                {creating && (
-                    <div style={{ marginTop: 12 }}>
-                        <Spin /> Creating...
-                    </div>
-                )}
+                <Space direction="vertical" style={{ width: '100%' }}>
+                    <Input
+                        placeholder="Backup name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        onPressEnter={handleCreate}
+                        disabled={creating}
+                    />
+                    <Space>
+                        <Button type="primary" onClick={handleCreate} loading={creating}>
+                            Create Backup
+                        </Button>
+                        <Button onClick={handleClearHistory} disabled={backups.length === 0}>
+                            Clear History
+                        </Button>
+                    </Space>
+                </Space>
             </Card>
 
-            <Card title="Backup Status" style={{ marginBottom: 20 }}>
-                <p>Backup Id: {backupId ?? '-'}</p>
-                <p>Status: {status ?? '-'}</p>
-            </Card>
-
-            <Card title="Events / History">
+            <Card title="Backup History">
                 <List
-                    dataSource={history}
-                    renderItem={(item, idx) => (
+                    dataSource={backups}
+                    renderItem={(backup, idx) => (
                         <List.Item key={idx}>
-                            <Typography.Text code>{item}</Typography.Text>
+                            <Space direction="vertical" style={{ width: '100%' }}>
+                                <Typography.Text strong>{backup.name} (ID: {backup.id})</Typography.Text>
+                                <Typography.Text type={backup.status === 'COMPLETED' ? 'success' : backup.status === 'CREATING' ? 'warning' : 'danger'}>
+                                    Status: {backup.status}
+                                </Typography.Text>
+                            </Space>
                         </List.Item>
                     )}
-                    locale={{ emptyText: 'No events yet' }}
+                    locale={{ emptyText: 'No backups created yet' }}
+                    style={{ maxHeight: '400px', overflowY: 'auto' }}
                 />
             </Card>
         </div>
