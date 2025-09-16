@@ -20,20 +20,18 @@ import java.util.concurrent.TimeUnit;
 
 public class KafkaListenerService {
     private final BackupRepository backupRepository;
-    private final ActionLogRepository actionLogRepository;
     private final BackupStatusNotifierService notifier;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5); // Pool for async tasks
 
     @Value("${kafka.backup-topic}")
     private String topicBackupCommand;
 
-    public KafkaListenerService(BackupRepository backupRepository, ActionLogRepository actionLogRepository, BackupStatusNotifierService notifier) {
+    public KafkaListenerService(BackupRepository backupRepository, BackupStatusNotifierService notifier) {
         this.backupRepository = backupRepository;
-        this.actionLogRepository = actionLogRepository;
         this.notifier = notifier;
     }
 
-    @KafkaListener(topics = "${kafka.backup-topic}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${kafka.notifier-topic}", groupId = "${spring.kafka.consumer.group-id}")
     public void executeBackupCommand(String message) throws InterruptedException {
         List<String> list = Arrays.stream(message.split(" ")).toList();
         String extractMessage = list.get(0) + " " + list.get(1);
@@ -47,16 +45,10 @@ public class KafkaListenerService {
         Long convertId = Long.parseLong(id);
         Optional<Backup> backupOptional = backupRepository.findById(convertId);
         if (backupOptional.isPresent()) {
-            Backup backup = backupOptional.get();
-            backup.setStatus("COMPLETED");
-            Backup saved = backupRepository.save(backup);
+            Backup saved = backupOptional.get();
             Map<String, Object> payload = new HashMap<>();
             payload.put("id", saved.getId());
             payload.put("status", saved.getStatus());
-            Optional<ActionLog> actionLogOptional = actionLogRepository.findByEntityId(id);
-            ActionLog actionLog = actionLogOptional.get();
-            actionLog.setStatus("COMPLETED");
-            this.actionLogRepository.save(actionLog);
             scheduler.schedule(() -> {
                 try {
                     String username = saved.getUser() != null ? saved.getUser().getUsername() : null;

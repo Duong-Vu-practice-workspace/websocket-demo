@@ -27,7 +27,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     private String rabbitHost;
 
     @Value("${spring.rabbitmq.relayPort:61613}")
-    private int rabbitStompPort; // override if you use a different STOMP port
+    private int rabbitStompPort;
 
     @Value("${spring.rabbitmq.username:guest}")
     private String rabbitUser;

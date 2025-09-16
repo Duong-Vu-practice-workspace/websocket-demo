@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: websocket_demo1
+  datasource:
+    url: jdbc:mariadb://localhost:3306/websocket_db
+    username: root
+    password: password
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MariaDBDialect
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: websocket-group
+server:
+  port: 8081
+
+kafka:
+  backup-topic: backup-command
+  notifier-topic: notifier-topic

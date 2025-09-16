@@ -37,3 +37,4 @@ jwt:
 
 kafka:
   backup-topic: backup-command
+  notifier-topic: notifier-topic

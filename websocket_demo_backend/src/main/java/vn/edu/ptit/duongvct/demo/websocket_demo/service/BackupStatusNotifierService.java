@@ -15,16 +15,6 @@ import vn.edu.ptit.duongvct.demo.websocket_demo.domain.Backup;
 public class BackupStatusNotifierService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
-//    public void notifyBackupUpdated(Backup backup) {
-//        if (backup == null || backup.getId() == null) return;
-//        String destination = "/topic/backup/" + backup.getId();
-//        try {
-//            messagingTemplate.convertAndSend(destination, backup);
-//            log.info("Sent websocket update to {} for backup id={}", destination, backup.getId());
-//        } catch (Exception e) {
-//            log.warn("Failed to send websocket update for backup {}: {}", backup.getId(), e.getMessage());
-//        }
-//    }
     public void publishBackupStatus(Object payload) {
         try {
             String json = objectMapper.writeValueAsString(payload);
