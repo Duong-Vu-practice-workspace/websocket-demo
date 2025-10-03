@@ -26,6 +26,14 @@ spring:
     bootstrap-servers: localhost:9092
     consumer:
       group-id: websocket-group
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 2000
+    password:
+    channel:
+      sse: sse-channel
 
 cors:
   allow-origins: http://localhost:9000,http://localhost:3000,http://localhost:5183,http://localhost:5184
