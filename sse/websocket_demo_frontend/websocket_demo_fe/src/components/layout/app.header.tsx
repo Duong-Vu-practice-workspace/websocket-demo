@@ -43,7 +43,7 @@ const AppHeader = () => {
                     description: res.message || "Unknown error",
                 });
             }
-        } catch (ecrr: any) {
+        } catch (err: any) {
             notification.error({
                 message: "Log out failed!",
                 description: err?.response?.data?.message || "Unknown error",
@@ -58,8 +58,8 @@ const AppHeader = () => {
             icon: <HomeOutlined />,
         },
         {
-            label: <Link to={"/backup"}>Backup</Link>,
-            key: "backup",
+            label: <Link to={"/backup-sse"}>Backup (SSE)</Link>,
+            key: "backup-sse",
             icon: <ExclamationOutlined />,
         },
         ...(!user?.id ? [

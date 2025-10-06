@@ -7,9 +7,9 @@ import RegisterPage from "./pages/client/auth/register.tsx";
 import {App, ConfigProvider} from "antd";
 import {AppProvider} from "./components/context/app.context.tsx";
 import enUS from 'antd/locale/en_US';
-import BackupPage from "./pages/client/backup/backup.page.tsx";
 import '@ant-design/v5-patch-for-react-19';
 import HomePage from './pages/home.tsx';
+import SseBackupPage from "./pages/client/backup/sse.backup.page.tsx";
 
 const router = createBrowserRouter([
     {
@@ -21,8 +21,8 @@ const router = createBrowserRouter([
                 element: <HomePage/>
             },
             {
-                path: "backup",
-                element: <BackupPage/>
+                path: "backup-sse",
+                element: <SseBackupPage/>
             }
         ]
     },

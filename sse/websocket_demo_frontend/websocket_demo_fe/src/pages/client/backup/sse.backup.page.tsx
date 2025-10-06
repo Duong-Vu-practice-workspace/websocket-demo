@@ -1,27 +1,37 @@
 import { useEffect, useState } from 'react';
 import { Card, Input, Button, List, Typography, notification, Space } from 'antd';
-import { addWSListener } from '../../../services/websocket';
-import { createBackupAPI } from "../../../services/api.ts";
+import { sseService, type BackupData } from '../../../services/sse'; // Adjust path if needed
+import { createBackupAPI } from "../../../services/api";
 
-
-interface PayLoadBackup {
-    id: string;
+interface BackupItem {
+    id: number;
+    name: string;
     status: string;
 }
-const BackupPage = () => {
+
+const SseBackupPage = () => {
     const [name, setName] = useState<string>('');
     const [creating, setCreating] = useState<boolean>(false);
     const [backups, setBackups] = useState<BackupItem[]>([]);
 
     useEffect(() => {
-        const unsub = addWSListener(async (payload: PayLoadBackup) => {
-            console.log('BackupPage received WS payload:', payload);
-            if (payload == null) {
-                console.warn('BackupPage: null payload received');
+        // Retrieve clientID from localStorage
+        const clientID = localStorage.getItem('username') || 'defaultClientID'; // Fallback if not found
+        const vitebackendUrl = import.meta.env.VITE_BACKEND_URL;
+        const sseUrl = `${vitebackendUrl}/api/v1/backup/stream?clientID=${clientID}`;
+
+        // Connect to SSE with the constructed URL
+        sseService.connect(sseUrl);
+
+        // Register listener for 'sse-event'
+        const listenerId = sseService.onEvent((data: BackupData) => {
+            console.log('SseBackupPage received SSE payload:', data);
+            if (data == null) {
+                console.warn('SseBackupPage: null payload received');
                 return;
             }
-            const incomingId: string | undefined = payload.id;
-            const incomingStatus: string | undefined = payload.status;
+            const incomingId: number | undefined = data.id;
+            const incomingStatus: string | undefined = data.status;
 
             if (!incomingId) return;
 
@@ -40,8 +50,10 @@ const BackupPage = () => {
             });
         });
 
+        // Cleanup on unmount
         return () => {
-            unsub();
+            sseService.offEvent(listenerId);
+            sseService.disconnect();
         };
     }, []);
 
@@ -54,9 +66,8 @@ const BackupPage = () => {
         try {
             const res = await createBackupAPI(name.trim());
             const id = res.data.id;
-            // const id = res && (res.data ?? res) ? String(res.data ?? res) : null;
             if (id) {
-                const newBackup: BackupItem = { id, name: res.data.name.trim(), status: res.data.status };
+                const newBackup: BackupItem = { id: Number(id), name: res.data.name.trim(), status: res.data.status };
                 setBackups(prev => [newBackup, ...prev]);  // Add to the top of the list
                 setName('');  // Clear input
                 notification.info({ message: 'Backup started', description: `Backup id ${id}` });
@@ -64,7 +75,7 @@ const BackupPage = () => {
                 throw new Error('Invalid response');
             }
         } catch (e) {
-            notification.error({ message: 'Create backup failed'});
+            notification.error({ message: 'Create backup failed' });
         } finally {
             setCreating(false);
         }
@@ -77,7 +88,7 @@ const BackupPage = () => {
 
     return (
         <div style={{ padding: 20 }}>
-            <Card title="Create Backup" style={{ marginBottom: 20 }}>
+            <Card title="Create Backup (SSE)" style={{ marginBottom: 20 }}>
                 <Space direction="vertical" style={{ width: '100%' }}>
                     <Input
                         placeholder="Backup name"
@@ -97,7 +108,7 @@ const BackupPage = () => {
                 </Space>
             </Card>
 
-            <Card title="Backup History">
+            <Card title="Backup History (SSE Updates)">
                 <List
                     dataSource={backups}
                     renderItem={(backup, idx) => (
@@ -118,4 +129,4 @@ const BackupPage = () => {
     );
 };
 
-export default BackupPage;
+export default SseBackupPage;
